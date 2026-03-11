@@ -1,8 +1,15 @@
 import numpy as np
+import pygame
+import sys
+import math
 
 FILAS = 6
 COLUMNAS = 7
 ULTIMA_FILA = 0
+COLOR = 0,0,255
+BG = 0,0,0
+COLORJUGADOR = 255, 191, 0
+COLORIA = 255,0,0
 
 def crear_tabla():
     tabla = np.zeros((FILAS, COLUMNAS))
@@ -52,10 +59,21 @@ def checar_victoria(tabla, pieza):
     #Chequeo diagonal negativo
     for c in range(COLUMNAS - 3):
         for f in range(3, FILAS):
-            if tabla[f][c] == pieza and tabla[f-1][c-1] == pieza and tabla[f-2][c-2] == pieza and tabla[f-3][c-3] == pieza:
+            if tabla[f][c] == pieza and tabla[f-1][c+1] == pieza and tabla[f-2][c+2] == pieza and tabla[f-3][c+3] == pieza:
                 return True 
 
-
+def dibujar_tabla(tabla):
+    for c in range(COLUMNAS):
+        for f in range(FILAS):
+            pygame.draw.rect(pantalla, COLOR, (c*TAMANO, f*TAMANO+TAMANO, TAMANO, TAMANO))
+            pygame.draw.circle(pantalla, BG, (int(c*TAMANO+TAMANO/2), int(f*TAMANO+TAMANO+TAMANO/2)), RADIO)
+    for c in range(COLUMNAS):
+        for f in range(FILAS):
+            if tabla[f][c] == 1:
+                pygame.draw.circle(pantalla, COLORJUGADOR, (int(c*TAMANO+TAMANO/2), altura - int(f*TAMANO+TAMANO/2)), RADIO)
+            elif tabla[f][c] == 2:
+                pygame.draw.circle(pantalla, COLORIA, (int(c*TAMANO+TAMANO/2), altura - int(f*TAMANO+TAMANO/2)), RADIO)
+    pygame.display.update()
 def turno_IA():
     pass
 
@@ -66,32 +84,65 @@ turno_jugador = decidir_turno()
 jugador = 1
 bot = 2
 
+
+pygame.init()
+
+TAMANO=100
+RADIO = int(TAMANO/2-5)
+
+
+longitud = COLUMNAS * TAMANO
+altura = (FILAS+1) * TAMANO
+
+total = (longitud, altura)
+
+pantalla = pygame.display.set_mode(total)
+dibujar_tabla(tabla)
+pygame.display.update()
+
 while not fin:
-    if turno_jugador == True:
-            columna = int(input("\nJugador ingresa en que casilla quieres meter la ficha (0-6)"))
-            if columna < 6 and columna >= 0:
-                if checar_jugada(tabla, columna):
-                    fila = caida_pieza(tabla, columna)
-                    poner_pieza(tabla, fila, columna, jugador)
-                    imprimir_tabla(tabla)
-                    if checar_victoria(tabla, 1):
-                        print("\n\nGanador Jugador humano!!")
-                        fin = True
-                    turno_jugador = False
-                else:
-                    print("\nJugador ingresa un movimiento apropiado")
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            sys.exit()
+        if evento.type == pygame.MOUSEMOTION:
+            pygame.draw.rect(pantalla, BG, (0,0, longitud, TAMANO))
+            posx = evento.pos[0]
+            if turno_jugador:
+                pygame.draw.circle(pantalla, COLORJUGADOR, (posx, int(TAMANO/2)), RADIO)
+            pygame.display.update()
+        if evento.type == pygame.MOUSEBUTTONDOWN:
+            if turno_jugador == True:
+                    posx = evento.pos[0]
+                    columna = int(math.floor(posx/TAMANO))
+                    if columna < 6 and columna >= 0:
+                        if checar_jugada(tabla, columna):
+                            fila = caida_pieza(tabla, columna)
+                            poner_pieza(tabla, fila, columna, jugador)
+                            imprimir_tabla(tabla)
+                            dibujar_tabla(tabla)
+
+                            if checar_victoria(tabla, 1):
+                                print("\n\nGanador Jugador humano!!")
+                                fin = True
+                            turno_jugador = False
+                        else:
+                            print("\nJugador ingresa un movimiento apropiado")
+                    else:
+                        print("\n Ingresa un numero correcto ")
             else:
-                print("\n Ingresa un numero correcto ")
-    else:
-        columna = int(input("\nIA ingresa en que casilla quieres meter la ficha (0-6)"))
-        if checar_jugada(tabla, columna) == True:
-            fila = caida_pieza(tabla, columna)
-            poner_pieza(tabla, fila, columna, bot)
-            imprimir_tabla(tabla)
-            if checar_victoria(tabla, 2):
-                    print("\n\nGanador IA!!")
-                    fin = True
-            turno_jugador = True
-            
-        else:
-            print("\nUh oh")
+                posx = evento.pos[0]
+                columna = int(math.floor(posx/TAMANO))
+                if checar_jugada(tabla, columna) == True:
+                    fila = caida_pieza(tabla, columna)
+                    poner_pieza(tabla, fila, columna, bot)
+                    imprimir_tabla(tabla)
+                    dibujar_tabla(tabla)
+
+                    if checar_victoria(tabla, 2):
+                            print("\n\nGanador IA!!")
+                            fin = True
+                    turno_jugador = True
+                    
+                else:
+                    print("\nUh oh")
+                
